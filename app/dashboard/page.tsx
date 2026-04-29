@@ -189,6 +189,68 @@ const initialPatients: PatientRecord[] = [
     sessionStartedAt: null,
   },
 ];
+
+const quickPrompts = [
+  "I feel lonely",
+  "Can you help me relax?",
+  "Tell me a gentle story",
+  "What medicine do I have today?",
+];
+
+const moodOptions = [
+  {
+    label: "Happy",
+    score: 5,
+    emoji: "Happy",
+    color: "from-emerald-400/30 to-cyan-400/20",
+  },
+  {
+    label: "Okay",
+    score: 4,
+    emoji: "Okay",
+    color: "from-sky-400/30 to-indigo-400/20",
+  },
+  {
+    label: "Sad",
+    score: 2,
+    emoji: "Sad",
+    color: "from-blue-400/25 to-slate-400/20",
+  },
+  {
+    label: "Frustrated",
+    score: 2,
+    emoji: "Upset",
+    color: "from-rose-400/30 to-orange-400/20",
+  },
+  {
+    label: "Tired",
+    score: 3,
+    emoji: "Tired",
+    color: "from-violet-400/25 to-slate-400/20",
+  },
+] as const;
+
+const entertainmentOptions = [
+  {
+    icon: Gamepad2,
+    title: "Trivia",
+    description: "A light question to make the moment more engaging.",
+    prompt: "Play trivia with me",
+  },
+  {
+    icon: Brain,
+    title: "Story",
+    description: "A gentle story for comfort and calm.",
+    prompt: "Tell me a gentle story",
+  },
+  {
+    icon: Moon,
+    title: "Breathing",
+    description: "A slow breathing exercise for relaxation.",
+    prompt: "Help me relax with breathing",
+  },
+];
+
 function summarizeConcerns(messages: Message[]) {
   const patientTexts = messages
     .filter((m) => m.role === "user")
@@ -1111,7 +1173,7 @@ function EntertainmentScreen({
   const [selectedVideo, setSelectedVideo] = useState("jfKfPfyJRdk");
   const [entertainmentPrompt, setEntertainmentPrompt] = useState("");
 
-  const useOption = (prompt: string) => {
+  const handleOption = (prompt: string) => {
     const userMessage: Message = {
       role: "user",
       content: prompt,
@@ -1134,7 +1196,7 @@ function EntertainmentScreen({
   const submitEntertainmentPrompt = (spokenText?: string) => {
     const clean = (spokenText ?? entertainmentPrompt).trim();
     if (!clean) return;
-    useOption(clean);
+    handleOption(clean);
     setEntertainmentPrompt("");
   };
 
@@ -1216,7 +1278,7 @@ function EntertainmentScreen({
                       key={item.title}
                       variant="secondary"
                       className={`${quietButton} flex h-auto items-start justify-start gap-3 px-4 py-4 text-left`}
-                      onClick={() => useOption(item.prompt)}
+                      onClick={() => handleOption(item.prompt)}
                     >
                       <div className="rounded-xl bg-white/10 p-2">
                         <Icon className="h-4 w-4 text-white" />
@@ -1824,7 +1886,7 @@ function DashboardScreen({
     const createdPatient: PatientRecord = {
       id,
       name: newPatientName.trim(),
-            age: Number(newPatientAge),
+      age: Number(newPatientAge),
       room: newPatientRoom,
       status: newPatientStatus,
       messages: [
@@ -1843,6 +1905,11 @@ function DashboardScreen({
       },
       family: [],
       tasks: [],
+      checkIns: [],
+      appointments: [],
+      medicalReports: [],
+      usageMinutes: 0,
+      sessionStartedAt: null,
     };
 
     setPatients((prev) => [...prev, createdPatient]);
@@ -1892,9 +1959,11 @@ function DashboardScreen({
               tasks: [
                 ...p.tasks,
                 {
+                  id: "task-" + Date.now(),
                   time: taskTime,
                   task: taskText,
-                  medication: taskMedication || "—",
+                  medication: taskMedication || "None",
+                  category: taskMedication ? "medicine" : "task",
                 },
               ],
             }
