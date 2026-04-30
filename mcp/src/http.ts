@@ -12,7 +12,7 @@ type JsonResponse = ServerResponse & {
   status: (code: number) => JsonResponse;
 };
 
-const app = createMcpExpressApp();
+const app = createMcpExpressApp({ host: "0.0.0.0" });
 const port = Number(process.env.PORT ?? 8787);
 
 app.get("/health", (_req: McpRequest, res: JsonResponse) => {
