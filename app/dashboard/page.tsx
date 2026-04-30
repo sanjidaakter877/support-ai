@@ -8,23 +8,17 @@ import {
   Smile,
   Gamepad2,
   Activity,
-  AlertCircle,
   Mic,
   Search,
-  UserRound,
   ShieldPlus,
-  Sparkles,
   Volume2,
   VolumeX,
   MicOff,
-  Sun,
-  Stars,
   Brain,
   Clock3,
   Users,
   Pill,
   UsersRound,
-  Plus,
   Lock,
   LogOut,
   CarFront,
@@ -45,10 +39,28 @@ import { Progress } from "@/components/ui/progress";
 
 declare global {
   interface Window {
-    webkitSpeechRecognition?: any;
-    SpeechRecognition?: any;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+    SpeechRecognition?: SpeechRecognitionConstructor;
   }
 }
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+
+type SpeechRecognitionInstance = {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionResultEventLike) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechRecognitionResultEventLike = {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+};
 
 /* ========================= TYPES ========================= */
 
@@ -439,7 +451,7 @@ function VoiceInputButton({
   className?: string;
 }) {
   const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   const startListening = () => {
     const SpeechRecognition =
@@ -463,7 +475,7 @@ function VoiceInputButton({
 
     recognition.onstart = () => setIsListening(true);
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
       onTranscript(transcript);
       setIsListening(false);
@@ -503,7 +515,7 @@ function StatCard({
   subtitle,
   gradient,
 }: {
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   title: string;
   value: string;
   subtitle?: string;
@@ -1021,10 +1033,6 @@ function SleepScreen({
   setPatient: (updater: (patient: PatientRecord) => PatientRecord) => void;
 }) {
   const [form, setForm] = useState(patient.sleep);
-
-  useEffect(() => {
-    setForm(patient.sleep);
-  }, [patient.id, patient.sleep]);
 
   const saveSleep = () => {
     setPatient((prev) => ({ ...prev, sleep: form }));
@@ -1798,7 +1806,6 @@ function FamilyPortalScreen({
 
 function DashboardScreen({
   patient,
-  patients,
   setPatients,
   setSelectedPatientId,
   caregiverAuthenticated,
@@ -1806,7 +1813,6 @@ function DashboardScreen({
   caregiverCredentials,
 }: {
   patient: PatientRecord;
-  patients: PatientRecord[];
   setPatients: React.Dispatch<React.SetStateAction<PatientRecord[]>>;
   setSelectedPatientId: (id: string) => void;
   caregiverAuthenticated: boolean;
@@ -1845,12 +1851,7 @@ function DashboardScreen({
 
   const [familyName, setFamilyName] = useState("");
   const [familyRelation, setFamilyRelation] = useState("");
-  const [familyAvatar, setFamilyAvatar] = useState("👩");
   const [familyNote, setFamilyNote] = useState("");
-
-  const [taskTime, setTaskTime] = useState("");
-  const [taskText, setTaskText] = useState("");
-  const [taskMedication, setTaskMedication] = useState("");
 
   const handleCaregiverLogin = () => {
     if (
@@ -1934,7 +1935,7 @@ function DashboardScreen({
                 {
                   name: familyName,
                   relation: familyRelation,
-                  avatar: familyAvatar,
+                  avatar: "Family",
                   note: familyNote,
                 },
               ],
@@ -1946,34 +1947,6 @@ function DashboardScreen({
     setFamilyName("");
     setFamilyRelation("");
     setFamilyNote("");
-  };
-
-  const addTask = () => {
-    if (!taskTime.trim() || !taskText.trim()) return;
-
-    setPatients((prev) =>
-      prev.map((p) =>
-        p.id === patient.id
-          ? {
-              ...p,
-              tasks: [
-                ...p.tasks,
-                {
-                  id: "task-" + Date.now(),
-                  time: taskTime,
-                  task: taskText,
-                  medication: taskMedication || "None",
-                  category: taskMedication ? "medicine" : "task",
-                },
-              ],
-            }
-          : p
-      )
-    );
-
-    setTaskTime("");
-    setTaskText("");
-    setTaskMedication("");
   };
 
   if (!caregiverAuthenticated) {
@@ -2428,7 +2401,6 @@ export default function SupportAIMVP() {
               >
                 <DashboardScreen
                   patient={currentPatient}
-                  patients={patients}
                   setPatients={setPatients}
                   setSelectedPatientId={setSelectedPatientId}
                   caregiverAuthenticated={caregiverAuthenticated}
