@@ -34,10 +34,28 @@ function jsonResult(structuredContent: Record<string, unknown>) {
 }
 
 export function createSupportAiMcpServer() {
-  const server = new McpServer({
-    name: "support-ai-care-signal-mcp",
-    version: "0.1.0"
-  });
+  const server = new McpServer(
+    {
+      name: "support-ai-care-signal-mcp",
+      version: "0.1.0"
+    },
+    {
+      capabilities: {
+        experimental: {
+          fhir_context_required: {
+            value: false,
+            supported_headers: [
+              "X-FHIR-Server-URL",
+              "X-FHIR-Access-Token",
+              "X-Patient-ID"
+            ],
+            note:
+              "FHIR context is optional for this synthetic demo. If supplied by Prompt Opinion, X-Patient-ID can map to the patientId argument used by the tools."
+          }
+        }
+      }
+    }
+  );
 
   server.registerTool(
     "list_synthetic_patients",
